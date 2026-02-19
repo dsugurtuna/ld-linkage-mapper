@@ -1,7 +1,7 @@
 """Tests for ProxyFilter."""
 
 from ld_mapper.proxy import ProxyResult, ProxyVariant
-from ld_mapper.filter import ProxyFilter, FilteredResult
+from ld_mapper.filter import ProxyFilter
 
 
 def _make_result() -> ProxyResult:

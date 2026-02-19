@@ -4,7 +4,7 @@ import csv
 
 from ld_mapper.proxy import ProxyVariant
 from ld_mapper.filter import FilteredResult
-from ld_mapper.mapper import ParticipantMapper, MappingResult
+from ld_mapper.mapper import ParticipantMapper
 
 
 def _write_participant_file(path, rows):
