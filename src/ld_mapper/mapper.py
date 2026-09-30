@@ -9,7 +9,6 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set
 
 from .filter import FilteredResult
 
@@ -18,11 +17,11 @@ from .filter import FilteredResult
 class MappingResult:
     """Result of mapping proxy variants to participants."""
 
-    target_rsids: List[str]
+    target_rsids: list[str]
     participant_count: int = 0
-    availability: Dict[str, Dict[str, bool]] = field(default_factory=dict)
+    availability: dict[str, dict[str, bool]] = field(default_factory=dict)
 
-    def get_participant_availability(self, participant_id: str) -> Dict[str, bool]:
+    def get_participant_availability(self, participant_id: str) -> dict[str, bool]:
         """Return {target_rsid: available} for one participant."""
         return self.availability.get(participant_id, {})
 
@@ -49,7 +48,7 @@ class ParticipantMapper:
         participant_col: str = "participant_id",
         variant_col: str = "variant_id",
     ) -> None:
-        self._participant_variants: Dict[str, Set[str]] = {}
+        self._participant_variants: dict[str, set[str]] = {}
         self._load(participant_file, participant_col, variant_col)
 
     def _load(self, path: str | Path, pid_col: str, var_col: str) -> None:
@@ -65,10 +64,10 @@ class ParticipantMapper:
                     self._participant_variants.setdefault(pid, set()).add(vid)
 
     @property
-    def participants(self) -> List[str]:
+    def participants(self) -> list[str]:
         return sorted(self._participant_variants.keys())
 
-    def map(self, filtered_results: List[FilteredResult]) -> MappingResult:
+    def map(self, filtered_results: list[FilteredResult]) -> MappingResult:
         """Map filtered proxy results to participant availability.
 
         For each participant, checks if they carry any proxy variant
@@ -80,14 +79,14 @@ class ParticipantMapper:
             participant_count=len(self._participant_variants),
         )
 
-        target_proxy_sets: Dict[str, Set[str]] = {}
+        target_proxy_sets: dict[str, set[str]] = {}
         for fr in filtered_results:
             proxy_ids = {p.rsid for p in fr.filtered_proxies}
             proxy_ids.add(fr.target_rsid)
             target_proxy_sets[fr.target_rsid] = proxy_ids
 
         for pid, variants in self._participant_variants.items():
-            avail: Dict[str, bool] = {}
+            avail: dict[str, bool] = {}
             for target, proxies in target_proxy_sets.items():
                 avail[target] = bool(variants & proxies)
             result.availability[pid] = avail
@@ -102,10 +101,7 @@ class ParticipantMapper:
         """Export the availability matrix to CSV."""
         with open(output_path, "w", newline="") as fh:
             writer = csv.writer(fh)
-            writer.writerow(["participant_id"] + result.target_rsids)
+            writer.writerow(["participant_id", *result.target_rsids])
             for pid in sorted(result.availability.keys()):
-                row = [pid] + [
-                    "Yes" if result.availability[pid].get(t) else "No"
-                    for t in result.target_rsids
-                ]
+                row = [pid] + ["Yes" if result.availability[pid].get(t) else "No" for t in result.target_rsids]
                 writer.writerow(row)

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 @dataclass
@@ -28,15 +27,15 @@ class ProxyResult:
     """Results of an LD proxy query for one target variant."""
 
     target_rsid: str
-    proxies: List[ProxyVariant] = field(default_factory=list)
-    error: Optional[str] = None
+    proxies: list[ProxyVariant] = field(default_factory=list)
+    error: str | None = None
 
     @property
     def has_proxies(self) -> bool:
         return len(self.proxies) > 0
 
     @property
-    def perfect_proxies(self) -> List[ProxyVariant]:
+    def perfect_proxies(self) -> list[ProxyVariant]:
         """Return proxies with R² = 1.0."""
         return [p for p in self.proxies if p.r2 == 1.0]
 
@@ -109,17 +108,19 @@ class LDProxyClient:
             return ProxyResult(target_rsid=rsid, error="No API token configured")
 
         try:
-            import urllib.request
             import urllib.parse
+            import urllib.request
 
-            params = urllib.parse.urlencode({
-                "var": rsid,
-                "pop": self.population,
-                "r2_d": "r2",
-                "window": self.window,
-                "genome_build": self.genome_build,
-                "token": self.token,
-            })
+            params = urllib.parse.urlencode(
+                {
+                    "var": rsid,
+                    "pop": self.population,
+                    "r2_d": "r2",
+                    "window": self.window,
+                    "genome_build": self.genome_build,
+                    "token": self.token,
+                }
+            )
             url = f"{self.BASE_URL}?{params}"
             req = urllib.request.Request(url)
             with urllib.request.urlopen(req, timeout=30) as resp:
@@ -129,6 +130,6 @@ class LDProxyClient:
         except Exception as exc:
             return ProxyResult(target_rsid=rsid, error=str(exc))
 
-    def query_batch(self, rsids: List[str]) -> List[ProxyResult]:
+    def query_batch(self, rsids: list[str]) -> list[ProxyResult]:
         """Query proxies for multiple variants with rate limiting."""
         return [self.query(r) for r in rsids]

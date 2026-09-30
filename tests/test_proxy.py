@@ -2,7 +2,6 @@
 
 from ld_mapper.proxy import LDProxyClient, ProxyResult, ProxyVariant
 
-
 SAMPLE_RESPONSE = """RS Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2
 rs123\tchr6:12345\tA/G\t0.15\t0\t1.0\t1.0
 rs456\tchr6:12400\tT/C\t0.20\t55\t0.95\t0.85

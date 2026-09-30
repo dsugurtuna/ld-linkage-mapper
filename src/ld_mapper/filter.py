@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Set
 
 from .proxy import ProxyResult, ProxyVariant
 
@@ -18,7 +17,7 @@ class FilteredResult:
     """Filtered proxy variants for a target."""
 
     target_rsid: str
-    filtered_proxies: List[ProxyVariant] = field(default_factory=list)
+    filtered_proxies: list[ProxyVariant] = field(default_factory=list)
     excluded_count: int = 0
 
     @property
@@ -40,7 +39,7 @@ class ProxyFilter:
     def __init__(
         self,
         min_r2: float = 1.0,
-        blocklist: Set[str] | None = None,
+        blocklist: set[str] | None = None,
     ) -> None:
         self.min_r2 = min_r2
         self.blocklist = blocklist or set()
@@ -50,7 +49,7 @@ class ProxyFilter:
         cls,
         path: str | Path,
         min_r2: float = 1.0,
-    ) -> "ProxyFilter":
+    ) -> ProxyFilter:
         """Create a filter loading the blocklist from a file."""
         with open(path) as fh:
             blocklist = {line.strip() for line in fh if line.strip()}
@@ -68,6 +67,6 @@ class ProxyFilter:
             filtered.filtered_proxies.append(proxy)
         return filtered
 
-    def filter_batch(self, results: List[ProxyResult]) -> List[FilteredResult]:
+    def filter_batch(self, results: list[ProxyResult]) -> list[FilteredResult]:
         """Filter multiple proxy results."""
         return [self.filter(r) for r in results]

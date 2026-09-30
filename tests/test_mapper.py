@@ -2,9 +2,9 @@
 
 import csv
 
-from ld_mapper.proxy import ProxyVariant
 from ld_mapper.filter import FilteredResult
 from ld_mapper.mapper import ParticipantMapper
+from ld_mapper.proxy import ProxyVariant
 
 
 def _write_participant_file(path, rows):
@@ -34,21 +34,27 @@ def _make_filtered_results():
 class TestParticipantMapper:
     def test_load_and_participants(self, tmp_path):
         pf = tmp_path / "part.csv"
-        _write_participant_file(pf, [
-            ["P001", "rs11"],
-            ["P001", "rs99"],
-            ["P002", "rs21"],
-        ])
+        _write_participant_file(
+            pf,
+            [
+                ["P001", "rs11"],
+                ["P001", "rs99"],
+                ["P002", "rs21"],
+            ],
+        )
         mapper = ParticipantMapper(pf)
         assert sorted(mapper.participants) == ["P001", "P002"]
 
     def test_map_availability(self, tmp_path):
         pf = tmp_path / "part.csv"
-        _write_participant_file(pf, [
-            ["P001", "rs11"],
-            ["P002", "rs21"],
-            ["P003", "rs99"],
-        ])
+        _write_participant_file(
+            pf,
+            [
+                ["P001", "rs11"],
+                ["P002", "rs21"],
+                ["P003", "rs99"],
+            ],
+        )
         mapper = ParticipantMapper(pf)
         results = _make_filtered_results()
         mapping = mapper.map(results)
@@ -69,10 +75,13 @@ class TestParticipantMapper:
 
     def test_export_csv(self, tmp_path):
         pf = tmp_path / "part.csv"
-        _write_participant_file(pf, [
-            ["P001", "rs11"],
-            ["P002", "rs21"],
-        ])
+        _write_participant_file(
+            pf,
+            [
+                ["P001", "rs11"],
+                ["P002", "rs21"],
+            ],
+        )
         mapper = ParticipantMapper(pf)
         results = _make_filtered_results()
         mapping = mapper.map(results)
