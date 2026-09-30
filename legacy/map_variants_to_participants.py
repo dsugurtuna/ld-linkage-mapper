@@ -17,17 +17,15 @@ RAW_DIR = os.path.join(DATA_DIR, "raw")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 
 # Inputs
-ID_FILE = os.path.join(RAW_DIR, "ukbb_affy_ids.tab") # Large participant file
+ID_FILE = os.path.join(RAW_DIR, "array_sample_ids.tab") # Large participant file
 PRESENT_VARIANTS_FILE = os.path.join(PROCESSED_DIR, "unique_rsid_filtered.txt") # Variants we found on the array
 
 # Outputs
 OUTPUT_FILE = os.path.join(PROCESSED_DIR, "participant_rsid_table.txt")
 
-# Target RSIDs (The original list of interest)
+# Target RSIDs (illustrative public example variants)
 TARGET_RSIDS = [
-    "rs149169037", "rs143275498", "rs185526362", "rs76380568", "rs79398237", 
-    "rs76255222", "rs141292963", "rs7782915", "rs77986239", "rs6965954", 
-    "rs77356730", "rs193214501", "rs75991383"
+    "rs429358", "rs7412", "rs1801133", "rs4988235"
 ]
 
 def main():
@@ -43,14 +41,14 @@ def main():
             # Header
             f.write("sourceid\trecordid\tsampleid\tindid\tcreate_ts\tupdate_ts\n")
             # Dummy Data
-            f.write("UKBB\tREC001\tPART001\tIND001\t2024-01-01\t2024-01-01\n")
-            f.write("UKBB\tREC002\tPART002\tIND002\t2024-01-01\t2024-01-01\n")
+            f.write("ARRAY_A\tREC001\tPART001\tIND001\t2024-01-01\t2024-01-01\n")
+            f.write("ARRAY_A\tREC002\tPART002\tIND002\t2024-01-01\t2024-01-01\n")
 
     if not os.path.exists(PRESENT_VARIANTS_FILE):
         print(f"Simulating present variants file: {PRESENT_VARIANTS_FILE}")
         with open(PRESENT_VARIANTS_FILE, 'w') as f:
-            # Assume rs7782915 is present on the array
-            f.write("rs7782915\n")
+            # Assume rs7412 is present on the array
+            f.write("rs7412\n")
 
     # 2. Load "Present" Variants into a Set for O(1) lookup
     present_variants = set()

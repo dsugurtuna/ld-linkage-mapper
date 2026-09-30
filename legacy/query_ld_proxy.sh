@@ -23,13 +23,11 @@ GENOME_BUILD="grch38"
 WINDOW_SIZE="500000"
 OUTPUT_FILE="./data/raw/ldproxy_results.txt"
 
-# Example List of rsIDs (Targets)
+# Example List of rsIDs (Targets): well-known public variants, for illustration
+# (APOE rs429358 and rs7412, MTHFR rs1801133, LCT region rs4988235).
 # In production, read this from a file.
 TARGET_RSIDS=(
-    "rs149169037" "rs143275498" "rs185526362" "rs76380568" 
-    "rs79398237" "rs76255222" "rs141292963" "rs7782915" 
-    "rs77986239" "rs6965954" "rs77356730" "rs193214501" 
-    "rs75991383"
+    "rs429358" "rs7412" "rs1801133" "rs4988235"
 )
 
 # --- Pre-flight Checks ---

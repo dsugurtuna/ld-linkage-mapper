@@ -1,7 +1,7 @@
 """Tests for ProxyFilter."""
 
-from ld_mapper.proxy import ProxyResult, ProxyVariant
 from ld_mapper.filter import ProxyFilter
+from ld_mapper.proxy import ProxyResult, ProxyVariant
 
 
 def _make_result() -> ProxyResult:
@@ -64,3 +64,22 @@ class TestProxyFilter:
         pf = ProxyFilter()
         result = pf.filter(_make_result())
         assert result.target_rsid == "rs100"
+
+
+def test_min_r2_out_of_range_rejected():
+    import pytest
+
+    with pytest.raises(ValueError):
+        ProxyFilter(min_r2=1.5)
+
+
+def test_blocklist_file_ignores_comments(tmp_path):
+    bl = tmp_path / "blocklist.txt"
+    bl.write_text("# known multi-allelic sites\nrs200\n")
+    pf = ProxyFilter.from_blocklist_file(bl)
+    assert pf.blocklist == {"rs200"}
+
+
+def test_query_error_carried_through():
+    result = ProxyResult(target_rsid="rs1", error="No API token configured")
+    assert ProxyFilter().filter(result).error == "No API token configured"
