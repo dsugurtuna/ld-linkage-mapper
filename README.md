@@ -125,12 +125,6 @@ flowchart LR
 - Optional concordance check between target and proxy where both are typed.
 - A small CLI around the Python API.
 
-## Jira provenance
-
-| Ticket | Description |
-| :--- | :--- |
-| BIOIN-92 | LD proxy lookup and participant mapping for recall feasibility |
-
 ## Development
 
 ```bash

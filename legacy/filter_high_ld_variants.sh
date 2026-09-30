@@ -15,10 +15,9 @@ INPUT_FILE="./data/raw/ldproxy_results.txt"
 OUTPUT_FILE="./data/processed/unique_rsid_filtered.txt"
 FULL_DETAILS_FILE="./data/processed/filtered_results_details.txt"
 
-# Blocklist: rsIDs to exclude (e.g., known artifacts, multi-allelic issues)
-EXCLUDE_RSIDS=("rs149169037" "rs143275498" "rs185526362" "rs76380568" 
-               "rs79398237" "rs76255222" "rs141292963" "rs7782915" 
-               "rs77986239" "rs6965954" "rs77356730" "rs193214501")
+# Blocklist: rsIDs to exclude (e.g., the query variants themselves, known
+# artifacts, multi-allelic issues). Illustrative public example variants.
+EXCLUDE_RSIDS=("rs429358" "rs7412" "rs1801133" "rs4988235")
 
 # --- Setup ---
 mkdir -p "$(dirname "$OUTPUT_FILE")"
