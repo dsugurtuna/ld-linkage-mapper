@@ -55,6 +55,62 @@ def _normalise(name: str) -> str:
     return name.strip().lower().replace("_", "").replace(" ", "")
 
 
+def parse_ldproxy(text: str, target: str) -> ProxyResult:
+    """Parse a tab-delimited LDproxy table (API response or web download).
+
+    Columns are located by header name, not position. The query variant
+    itself and rows without an rsID (``.``) are skipped, because neither
+    can act as a proxy that is matched by rsID.
+    """
+    result = ProxyResult(target_rsid=target)
+    stripped = text.strip()
+    if stripped.startswith("{"):
+        try:
+            payload = json.loads(stripped)
+        except json.JSONDecodeError:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        result.error = str(payload.get("error", "Unrecognised JSON response"))
+        return result
+
+    lines = stripped.split("\n")
+    if len(lines) < 2:
+        result.error = "No data returned"
+        return result
+
+    header = [_normalise(h) for h in lines[0].split("\t")]
+    if "rsnumber" not in header or "r2" not in header:
+        result.error = f"Unexpected response: {lines[0][:200]}"
+        return result
+    col = {name: i for i, name in enumerate(header)}
+
+    def cell(parts: list[str], name: str) -> str:
+        i = col.get(name)
+        return parts[i].strip() if i is not None and i < len(parts) else ""
+
+    for line in lines[1:]:
+        parts = line.split("\t")
+        rsid = cell(parts, "rsnumber")
+        if not rsid or rsid == "." or rsid.lower() == target.lower():
+            continue
+        try:
+            proxy = ProxyVariant(
+                rsid=rsid,
+                coord=cell(parts, "coord"),
+                alleles=cell(parts, "alleles"),
+                r2=float(cell(parts, "r2")),
+                d_prime=float(cell(parts, "dprime") or 0.0),
+                distance=int(float(cell(parts, "distance") or 0)),
+                maf=float(cell(parts, "maf") or 0.0),
+                correlated_alleles=cell(parts, "correlatedalleles"),
+            )
+        except ValueError:
+            continue
+        result.proxies.append(proxy)
+    return result
+
+
 class LDProxyClient:
     """Query the NCI LDlink API for proxy variants.
 
@@ -95,57 +151,8 @@ class LDProxyClient:
         self._last_request: float | None = None
 
     def _parse_response(self, text: str, target: str) -> ProxyResult:
-        """Parse the tab-delimited LDproxy response.
-
-        Columns are located by header name, not position. The query variant
-        itself and rows without an rsID (``.``) are skipped, because neither
-        can act as a proxy that is matched by rsID.
-        """
-        result = ProxyResult(target_rsid=target)
-        stripped = text.strip()
-        if stripped.startswith("{"):
-            try:
-                payload = json.loads(stripped)
-            except json.JSONDecodeError:
-                payload = {}
-            result.error = str(payload.get("error", "Unrecognised JSON response"))
-            return result
-
-        lines = stripped.split("\n")
-        if len(lines) < 2:
-            result.error = "No data returned"
-            return result
-
-        header = [_normalise(h) for h in lines[0].split("\t")]
-        if "rsnumber" not in header or "r2" not in header:
-            result.error = f"Unexpected response: {lines[0][:200]}"
-            return result
-        col = {name: i for i, name in enumerate(header)}
-
-        def cell(parts: list[str], name: str) -> str:
-            i = col.get(name)
-            return parts[i].strip() if i is not None and i < len(parts) else ""
-
-        for line in lines[1:]:
-            parts = line.split("\t")
-            rsid = cell(parts, "rsnumber")
-            if not rsid or rsid == "." or rsid.lower() == target.lower():
-                continue
-            try:
-                proxy = ProxyVariant(
-                    rsid=rsid,
-                    coord=cell(parts, "coord"),
-                    alleles=cell(parts, "alleles"),
-                    r2=float(cell(parts, "r2")),
-                    d_prime=float(cell(parts, "dprime") or 0.0),
-                    distance=int(float(cell(parts, "distance") or 0)),
-                    maf=float(cell(parts, "maf") or 0.0),
-                    correlated_alleles=cell(parts, "correlatedalleles"),
-                )
-            except ValueError:
-                continue
-            result.proxies.append(proxy)
-        return result
+        """Parse an LDproxy response; see :func:`parse_ldproxy`."""
+        return parse_ldproxy(text, target)
 
     def _wait_for_rate_limit(self) -> None:
         """Sleep so that consecutive requests start at least rate_limit apart."""

@@ -1,0 +1,6 @@
+RS_Number	Coord	Alleles	MAF	Distance	Dprime	R2	Correlated_Alleles	RegulomeDB	Function
+rs9000001	chr7:1000000	(A/G)	0.12	0	1.0	1.0	A=A,G=G	.	.
+rs9000011	chr7:1004200	(C/T)	0.12	4200	1.0	1.0	A=C,G=T	.	.
+rs9000012	chr7:998100	(G/A)	0.12	-1900	1.0	1.0	A=G,G=A	.	.
+rs9000013	chr7:1012000	(T/C)	0.13	12000	1.0	0.93	A=T,G=C	.	.
+rs9000014	chr7:1030000	(A/C)	0.20	30000	0.8	0.41	A=A,G=C	.	.

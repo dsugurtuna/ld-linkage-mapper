@@ -1,0 +1,2 @@
+# Synthetic example: pretend this proxy probe failed QC on our arrays.
+rs9000012

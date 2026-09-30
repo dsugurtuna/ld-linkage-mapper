@@ -4,7 +4,7 @@ __version__ = "2.0.0"
 
 from .filter import FilteredResult, ProxyFilter
 from .mapper import MappingResult, ParticipantMapper
-from .proxy import LDProxyClient, ProxyResult
+from .proxy import LDProxyClient, ProxyResult, ProxyVariant, parse_ldproxy
 
 __all__ = [
     "FilteredResult",
@@ -13,4 +13,6 @@ __all__ = [
     "ParticipantMapper",
     "ProxyFilter",
     "ProxyResult",
+    "ProxyVariant",
+    "parse_ldproxy",
 ]
