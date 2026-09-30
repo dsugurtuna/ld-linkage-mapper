@@ -18,7 +18,8 @@ class FilteredResult:
 
     target_rsid: str
     filtered_proxies: list[ProxyVariant] = field(default_factory=list)
-    excluded_count: int = 0
+    excluded_count: int = 0  # proxies that passed R² but were blocklisted
+    error: str | None = None  # carried over from the query, if it failed
 
     @property
     def count(self) -> int:
@@ -33,7 +34,9 @@ class ProxyFilter:
     min_r2 : float
         Minimum R² to retain a proxy. Default 1.0 (perfect LD).
     blocklist : set of str, optional
-        rsIDs to exclude from results.
+        rsIDs to exclude from results. Blocklisting is checked after the R²
+        threshold, so ``excluded_count`` counts only proxies that would
+        otherwise have been kept.
     """
 
     def __init__(
@@ -41,6 +44,8 @@ class ProxyFilter:
         min_r2: float = 1.0,
         blocklist: set[str] | None = None,
     ) -> None:
+        if not 0.0 <= min_r2 <= 1.0:
+            raise ValueError(f"min_r2 must be between 0 and 1, got {min_r2}")
         self.min_r2 = min_r2
         self.blocklist = blocklist or set()
 
@@ -52,12 +57,12 @@ class ProxyFilter:
     ) -> ProxyFilter:
         """Create a filter loading the blocklist from a file."""
         with open(path) as fh:
-            blocklist = {line.strip() for line in fh if line.strip()}
+            blocklist = {line.strip() for line in fh if line.strip() and not line.startswith("#")}
         return cls(min_r2=min_r2, blocklist=blocklist)
 
     def filter(self, result: ProxyResult) -> FilteredResult:
         """Filter a single proxy result."""
-        filtered = FilteredResult(target_rsid=result.target_rsid)
+        filtered = FilteredResult(target_rsid=result.target_rsid, error=result.error)
         for proxy in result.proxies:
             if proxy.r2 < self.min_r2:
                 continue

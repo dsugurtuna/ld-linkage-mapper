@@ -72,3 +72,78 @@ class TestProxyResult:
         )
         assert r.has_proxies
         assert len(r.perfect_proxies) == 1
+
+
+# Header and row layout as documented for LDproxy (query variant first).
+LDPROXY_RESPONSE = (
+    "RS_Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2\tCorrelated_Alleles\tRegulomeDB\tFunction\n"
+    "rs100\tchr1:1000\t(A/G)\t0.2\t0\t1.0\t1.0\tA=A,G=G\t4\tNA\n"
+    "rs101\tchr1:1500\t(C/T)\t0.2\t500\t1.0\t1.0\tA=C,G=T\t5\tNA\n"
+    ".\tchr1:1600\t(G/A)\t0.2\t600\t1.0\t1.0\tA=G,G=A\t7\tNA\n"
+    "rs102\tchr1:-\t(T/C)\t0.3\t-800\t0.9\t0.64\tA=T,G=C\t7\tNA\n"
+)
+
+
+class TestLDproxyParsing:
+    def test_query_variant_row_is_not_a_proxy(self):
+        result = LDProxyClient()._parse_response(LDPROXY_RESPONSE, "rs100")
+        assert [p.rsid for p in result.proxies] == ["rs101", "rs102"]
+
+    def test_columns_located_by_header(self):
+        result = LDProxyClient()._parse_response(LDPROXY_RESPONSE, "rs100")
+        p = result.proxies[0]
+        assert p.distance == 500
+        assert p.maf == 0.2
+        assert p.correlated_alleles == "A=C,G=T"
+        assert result.proxies[1].distance == -800
+
+    def test_json_error_body(self):
+        result = LDProxyClient()._parse_response('{"error": "rs1 is not in 1000G."}', "rs1")
+        assert result.error == "rs1 is not in 1000G."
+        assert not result.has_proxies
+
+    def test_unexpected_header(self):
+        result = LDProxyClient()._parse_response("error: bad token\nmore", "rs1")
+        assert result.error is not None
+        assert result.error.startswith("Unexpected response")
+
+
+class TestQueryWithFakeTransport:
+    def test_query_uses_fetch_and_parses(self, monkeypatch):
+        client = LDProxyClient(token="t", rate_limit=0)
+        seen = []
+
+        def fake_fetch(url: str) -> str:
+            seen.append(url)
+            return LDPROXY_RESPONSE
+
+        monkeypatch.setattr(client, "_fetch", fake_fetch)
+        result = client.query("rs100")
+        assert result.error is None
+        assert len(result.proxies) == 2
+        assert "var=rs100" in seen[0] and "pop=GBR" in seen[0]
+
+    def test_network_error_is_returned_not_raised(self, monkeypatch):
+        import urllib.error
+
+        client = LDProxyClient(token="t", rate_limit=0)
+
+        def failing_fetch(url: str) -> str:
+            raise urllib.error.URLError("connection refused")
+
+        monkeypatch.setattr(client, "_fetch", failing_fetch)
+        result = client.query("rs100")
+        assert result.error is not None
+        assert "connection refused" in result.error
+
+    def test_rate_limit_spaces_requests(self, monkeypatch):
+        import ld_mapper.proxy as proxy_module
+
+        sleeps: list[float] = []
+        monkeypatch.setattr(proxy_module.time, "sleep", sleeps.append)
+        client = LDProxyClient(token="t", rate_limit=5.0)
+        monkeypatch.setattr(client, "_fetch", lambda url: LDPROXY_RESPONSE)
+        client.query_batch(["rs100", "rs100"])
+        # No wait before the first request; roughly rate_limit before the second.
+        assert len(sleeps) == 1
+        assert 4.0 < sleeps[0] <= 5.0

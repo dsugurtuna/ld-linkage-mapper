@@ -106,3 +106,55 @@ class TestParticipantMapper:
         assert avail["rs10"] is True
         missing = mapping.get_participant_availability("NOPE")
         assert missing == {}
+
+
+class TestSourceTracking:
+    def test_source_prefers_target_then_best_proxy(self, tmp_path):
+        pf = tmp_path / "part.csv"
+        _write_participant_file(
+            pf,
+            [
+                ["P001", "rs10"],
+                ["P001", "rs11"],
+                ["P002", "rs12"],
+                ["P003", "rs99"],
+            ],
+        )
+        results = [
+            FilteredResult(
+                target_rsid="rs10",
+                filtered_proxies=[
+                    ProxyVariant(rsid="rs12", r2=1.0, distance=900),
+                    ProxyVariant(rsid="rs11", r2=1.0, distance=100),
+                ],
+            )
+        ]
+        mapping = ParticipantMapper(pf).map(results)
+        assert mapping.source["P001"]["rs10"] == "rs10"
+        assert mapping.source["P002"]["rs10"] == "rs12"
+        assert mapping.source["P003"]["rs10"] is None
+        assert mapping.available_count("rs10") == 2
+
+    def test_export_with_source(self, tmp_path):
+        pf = tmp_path / "part.csv"
+        _write_participant_file(pf, [["P001", "rs11"], ["P002", "rs99"]])
+        mapping = ParticipantMapper(pf).map(_make_filtered_results())
+        out = tmp_path / "out.csv"
+        ParticipantMapper.export_csv(mapping, out, show_source=True)
+        rows = {r["participant_id"]: r for r in csv.DictReader(out.open())}
+        assert rows["P001"]["rs10"] == "rs11"
+        assert rows["P002"]["rs10"] == "NA"
+
+    def test_tab_delimited_input(self, tmp_path):
+        pf = tmp_path / "part.tsv"
+        pf.write_text("participant_id\tvariant_id\nP001\trs11\n")
+        mapping = ParticipantMapper(pf).map(_make_filtered_results())
+        assert mapping.availability["P001"]["rs10"] is True
+
+    def test_missing_column_raises(self, tmp_path):
+        import pytest
+
+        pf = tmp_path / "part.csv"
+        pf.write_text("sample,rsid\nP001,rs11\n")
+        with pytest.raises(ValueError, match="missing column"):
+            ParticipantMapper(pf)
